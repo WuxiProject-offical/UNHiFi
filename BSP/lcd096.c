@@ -9,7 +9,7 @@
 #define LCD_DC_SET(x) gpio_bit_write(GPIOB, GPIO_PIN_7, (x))
 #define LCD_RST_SET(x) gpio_bit_write(GPIOB, GPIO_PIN_8, (x))
 
-void LCD_Writ_Bus(uint8_t dat)
+void LCD_WR_DATA8(uint8_t dat)
 {
 	LCD_CS_EN();
 	while (RESET == spi_i2s_flag_get(SPI2, SPI_FLAG_TBE))
@@ -24,21 +24,40 @@ void LCD_Writ_Bus(uint8_t dat)
 	LCD_CS_DIS();
 }
 
-void LCD_WR_DATA8(uint8_t dat)
-{
-	LCD_Writ_Bus(dat);
-}
-
 void LCD_WR_DATA(uint16_t dat)
 {
-	LCD_Writ_Bus(dat >> 8);
-	LCD_Writ_Bus(dat);
+	LCD_CS_EN();
+	while (RESET == spi_i2s_flag_get(SPI2, SPI_FLAG_TBE))
+	{
+		__NOP();
+	}
+	spi_i2s_data_transmit(SPI2, (dat >> 8) & 0x00ff);
+	while (RESET == spi_i2s_flag_get(SPI2, SPI_FLAG_TBE))
+	{
+		__NOP();
+	}
+	spi_i2s_data_transmit(SPI2, dat & 0x00ff);
+	while (SET == spi_i2s_flag_get(SPI2, SPI_FLAG_TRANS))
+	{
+		__NOP();
+	}
+	LCD_CS_DIS();
 }
 
 void LCD_WR_REG(uint8_t dat)
 {
 	LCD_DC_SET(0);
-	LCD_Writ_Bus(dat);
+	LCD_CS_EN();
+	while (RESET == spi_i2s_flag_get(SPI2, SPI_FLAG_TBE))
+	{
+		__NOP();
+	}
+	spi_i2s_data_transmit(SPI2, dat);
+	while (SET == spi_i2s_flag_get(SPI2, SPI_FLAG_TRANS))
+	{
+		__NOP();
+	}
+	LCD_CS_DIS();
 	LCD_DC_SET(1);
 }
 
@@ -88,17 +107,21 @@ void LCD_Init(void)
 	LCD_WR_REG(0x11); // Sleep exit
 	LCD_CS_DIS();
 	delay_1ms(120); // Delay 120ms
+
 	LCD_CS_EN();
+	// Frame Rate Control in Normal
 	LCD_WR_REG(0xB1);
 	LCD_WR_DATA8(0x05);
 	LCD_WR_DATA8(0x3C);
 	LCD_WR_DATA8(0x3C);
 
+	// Frame Rate Control in Idle
 	LCD_WR_REG(0xB2);
 	LCD_WR_DATA8(0x05);
 	LCD_WR_DATA8(0x3C);
 	LCD_WR_DATA8(0x3C);
 
+	// Frame Rate Control in Partial
 	LCD_WR_REG(0xB3);
 	LCD_WR_DATA8(0x05);
 	LCD_WR_DATA8(0x3C);
@@ -111,46 +134,56 @@ void LCD_Init(void)
 	LCD_WR_REG(0x21); // COLOR REVERSE
 #endif
 
-	LCD_WR_REG(0xB4); // Dot inversion
-	LCD_WR_DATA8(0x07);
+	// Display inversion
+	LCD_WR_REG(0xB4);
+	LCD_WR_DATA8(0x00);
 
 	//	LCD_WR_REG(0xB1);
 	//	LCD_WR_DATA8(0x01);
 	//	LCD_WR_DATA8(0x2C);
 	//	LCD_WR_DATA8(0x2D);
 
+	// Power ctrl 1
 	LCD_WR_REG(0xC0);
 	LCD_WR_DATA8(0x0E);
 	LCD_WR_DATA8(0x0E);
 	LCD_WR_DATA8(0x04);
 
+	// Power ctrl 2
 	LCD_WR_REG(0xC1);
 	LCD_WR_DATA8(0xC5);
 
+	// Power ctrl 3 in Normal
 	LCD_WR_REG(0xC2);
 	LCD_WR_DATA8(0x0d);
 	LCD_WR_DATA8(0x00);
 
+	// Power ctrl 4 in Idle
 	LCD_WR_REG(0xC3);
 	LCD_WR_DATA8(0x8D);
 	LCD_WR_DATA8(0x2A);
 
+	// Power ctrl 5 in Partial
 	LCD_WR_REG(0xC4);
 	LCD_WR_DATA8(0x8D);
 	LCD_WR_DATA8(0xEE);
 
+	// Power ctrl 6
 	LCD_WR_REG(0xC5);	// VCOM
 	LCD_WR_DATA8(0x06); // 1D  .06
 
-	LCD_WR_REG(0x36); // MX, MY, RGB mode
+	// Memory Data Access Control
+	LCD_WR_REG(0x36); // MX, MY, RGB mode, LtR
 	if (_lcd_direction == 0)
 		LCD_WR_DATA8(0x78);
 	else
 		LCD_WR_DATA8(0xA8);
 
+	// Interface Pixel Format
 	LCD_WR_REG(0x3A);
-	LCD_WR_DATA8(0x55);
+	LCD_WR_DATA8(0x55); // 16-bit
 
+	// Gamma +
 	LCD_WR_REG(0xE0);
 	LCD_WR_DATA8(0x0b);
 	LCD_WR_DATA8(0x17);
@@ -169,6 +202,7 @@ void LCD_Init(void)
 	LCD_WR_DATA8(0x05);
 	LCD_WR_DATA8(0x10);
 
+	// Gamma -
 	LCD_WR_REG(0xE1);
 	LCD_WR_DATA8(0x0c);
 	LCD_WR_DATA8(0x19);

@@ -61,12 +61,23 @@ int main(void)
     gd_log_com_init();
 
     LCD_Init();
-    LCD_Fill(0, 0, 160, 80, BLUE);
 
     printf("\r\nCK_SYS is %d", rcu_clock_freq_get(CK_SYS));
     printf("\r\nCK_AHB is %d", rcu_clock_freq_get(CK_AHB));
     printf("\r\nCK_APB1 is %d", rcu_clock_freq_get(CK_APB1));
     printf("\r\nCK_APB2 is %d\r\n", rcu_clock_freq_get(CK_APB2));
+
+    while (1)
+    {
+        LCD_Fill(0, 0, 160, 80, RED);
+        delay_1ms(1000);
+        LCD_Fill(0, 0, 160, 80, GREEN);
+        delay_1ms(1000);
+        LCD_Fill(0, 0, 160, 80, BLUE);
+        delay_1ms(1000);
+        LCD_Fill(0, 0, 160, 80, WHITE);
+        delay_1ms(1000);
+    }
 
     // mydma_config();
 

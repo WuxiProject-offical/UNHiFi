@@ -211,7 +211,7 @@ void sd_demo()
     printf("\r\n\r\n Card test:");
 
     /* single block operation test */
-    sd_error = sd_block_read(buf_read, 100 * 512, 512);
+    sd_error = sd_block_read(buf_read, 100001088ULL * 512, 512);
     if (SD_OK != sd_error)
     {
         printf("\r\n Block read fail!");
@@ -255,7 +255,7 @@ void sd_demo()
             printf("\r\n The card is unlocked!");
         }
 
-        sd_error = sd_block_read(buf_read, 100 * 512, 512);
+        sd_error = sd_block_read(buf_read, 100001088ULL  * 512, 512);
         if (SD_OK != sd_error)
         {
             printf("\r\n Block read fail!");

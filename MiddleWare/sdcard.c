@@ -107,7 +107,7 @@ OF SUCH DAMAGE.
 #define SD_ALLZERO ((uint32_t)0x00000000)             /* all zero */
 #define SD_RCA_SHIFT ((uint8_t)0x10)                  /* RCA shift bits */
 #define SD_CLK_DIV_INIT ((uint16_t)0x012A)            /* SD clock division in initilization phase */
-#define SD_CLK_DIV_TRANS ((uint16_t)0x0009)           /* SD clock division in transmission phase */
+#define SD_CLK_DIV_TRANS ((uint16_t)0x0004)           /* SD clock division in transmission phase */
 
 #define SDIO_MASK_INTC_FLAGS ((uint32_t)0x00C007FF) /* mask flags of SDIO_INTC */
 
@@ -474,7 +474,7 @@ sd_error_enum sd_transfer_mode_config(uint32_t txmode)
     \param[in]  blocksize: the data block size
     \retval     sd_error_enum
 */
-sd_error_enum sd_block_read(uint32_t *preadbuffer, uint32_t readaddr, uint16_t blocksize)
+sd_error_enum sd_block_read(uint32_t *preadbuffer, uint64_t readaddr, uint16_t blocksize)
 {
     /* initialize the variables */
     sd_error_enum status = SD_OK;
@@ -632,7 +632,7 @@ sd_error_enum sd_block_read(uint32_t *preadbuffer, uint32_t readaddr, uint16_t b
     \param[in]  blocksnumber: number of blocks that will be read
     \retval     sd_error_enum
 */
-sd_error_enum sd_multiblocks_read(uint32_t *preadbuffer, uint32_t readaddr, uint16_t blocksize, uint32_t blocksnumber)
+sd_error_enum sd_multiblocks_read(uint32_t *preadbuffer, uint64_t readaddr, uint16_t blocksize, uint32_t blocksnumber)
 {
     /* initialize the variables */
     sd_error_enum status = SD_OK;
@@ -825,7 +825,7 @@ sd_error_enum sd_multiblocks_read(uint32_t *preadbuffer, uint32_t readaddr, uint
     \param[out] none
     \retval     sd_error_enum
 */
-sd_error_enum sd_block_write(uint32_t *pwritebuffer, uint32_t writeaddr, uint16_t blocksize)
+sd_error_enum sd_block_write(uint32_t *pwritebuffer, uint64_t writeaddr, uint16_t blocksize)
 {
     /* initialize the variables */
     sd_error_enum status = SD_OK;
@@ -1048,7 +1048,7 @@ sd_error_enum sd_block_write(uint32_t *pwritebuffer, uint32_t writeaddr, uint16_
     \param[out] none
     \retval     sd_error_enum
 */
-sd_error_enum sd_multiblocks_write(uint32_t *pwritebuffer, uint32_t writeaddr, uint16_t blocksize, uint32_t blocksnumber)
+sd_error_enum sd_multiblocks_write(uint32_t *pwritebuffer, uint64_t writeaddr, uint16_t blocksize, uint32_t blocksnumber)
 {
     /* initialize the variables */
     sd_error_enum status = SD_OK;

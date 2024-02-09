@@ -37,6 +37,7 @@ OF SUCH DAMAGE.
 
 #include "gd32f30x_it.h"
 #include "systick.h"
+#include "sdcard.h"
 
 /*!
     \brief      this function handles NMI exception
@@ -140,3 +141,15 @@ void SysTick_Handler(void)
 {
     delay_decrement();
 }
+
+/*!
+    \brief      this function handles SDIO interrupt request
+    \param[in]  none
+    \param[out] none
+    \retval     none
+*/
+void SDIO_IRQHandler(void)
+{
+    sd_interrupts_process();
+}
+

@@ -5,6 +5,7 @@
 #include "systick.h"
 #include "i2c.h"
 #include "spi.h"
+#include "sdcard.h"
 
 // BSPs
 #include "tpa6130.h"
@@ -17,6 +18,9 @@ uint8_t spi2_receive_array[arraysize];
 void rcu_config(void);
 void mydma_config(void);
 void myspi_config(void);
+
+sd_card_info_struct sd_cardinfo; /* information of SD card */
+uint32_t buf_read[512];          /* store the data read from the card */
 
 void gd_log_com_init()
 {
@@ -40,6 +44,246 @@ void gd_log_com_init()
     usart_enable(USART0);
 }
 
+sd_error_enum sd_io_init(void)
+{
+    sd_error_enum status = SD_OK;
+    uint32_t cardstate = 0;
+    status = sd_init();
+    if (SD_OK == status)
+    {
+        status = sd_card_information_get(&sd_cardinfo);
+    }
+    if (SD_OK == status)
+    {
+        status = sd_card_select_deselect(sd_cardinfo.card_rca);
+    }
+    status = sd_cardstatus_get(&cardstate);
+    if (cardstate & 0x02000000)
+    {
+        printf("\r\n the card is locked!");
+        while (1)
+        {
+        }
+    }
+    if ((SD_OK == status) && (!(cardstate & 0x02000000)))
+    {
+        /* set bus mode */
+        status = sd_bus_mode_config(SDIO_BUSMODE_4BIT);
+        //        status = sd_bus_mode_config( SDIO_BUSMODE_1BIT );
+    }
+    if (SD_OK == status)
+    {
+        /* set data transfer mode */
+        //        status = sd_transfer_mode_config( SD_DMA_MODE );
+        status = sd_transfer_mode_config(SD_POLLING_MODE);
+    }
+    return status;
+}
+void card_info_get(void)
+{
+    uint8_t sd_spec, sd_spec3, sd_spec4, sd_security;
+    uint32_t block_count, block_size;
+    uint16_t temp_ccc;
+    printf("\r\n Card information:");
+    sd_spec = (sd_scr[1] & 0x0F000000) >> 24;
+    sd_spec3 = (sd_scr[1] & 0x00008000) >> 15;
+    sd_spec4 = (sd_scr[1] & 0x00000400) >> 10;
+    if (2 == sd_spec)
+    {
+        if (1 == sd_spec3)
+        {
+            if (1 == sd_spec4)
+            {
+                printf("\r\n## Card version 4.xx ##");
+            }
+            else
+            {
+                printf("\r\n## Card version 3.0x ##");
+            }
+        }
+        else
+        {
+            printf("\r\n## Card version 2.00 ##");
+        }
+    }
+    else if (1 == sd_spec)
+    {
+        printf("\r\n## Card version 1.10 ##");
+    }
+    else if (0 == sd_spec)
+    {
+        printf("\r\n## Card version 1.0x ##");
+    }
+
+    sd_security = (sd_scr[1] & 0x00700000) >> 20;
+    if (2 == sd_security)
+    {
+        printf("\r\n## SDSC card ##");
+    }
+    else if (3 == sd_security)
+    {
+        printf("\r\n## SDHC card ##");
+    }
+    else if (4 == sd_security)
+    {
+        printf("\r\n## SDXC card ##");
+    }
+    else
+    {
+        printf("\r\n## SD-%d card ##", sd_security);
+    }
+
+    block_count = (sd_cardinfo.card_csd.c_size + 1) * 1024;
+    block_size = 512;
+    printf("\r\n## Device size is %dKB ##", sd_card_capacity_get());
+    printf("\r\n## Block size is %dB ##", block_size);
+    printf("\r\n## Block count is %d ##", block_count);
+
+    if (sd_cardinfo.card_csd.read_bl_partial)
+    {
+        printf("\r\n## Partial blocks for read allowed ##");
+    }
+    if (sd_cardinfo.card_csd.write_bl_partial)
+    {
+        printf("\r\n## Partial blocks for write allowed ##");
+    }
+    temp_ccc = sd_cardinfo.card_csd.ccc;
+    printf("\r\n## CardCommandClasses is: %x ##", temp_ccc);
+    if ((SD_CCC_BLOCK_READ & temp_ccc) && (SD_CCC_BLOCK_WRITE & temp_ccc))
+    {
+        printf("\r\n## Block operation supported ##");
+    }
+    if (SD_CCC_ERASE & temp_ccc)
+    {
+        printf("\r\n## Erase supported ##");
+    }
+    if (SD_CCC_WRITE_PROTECTION & temp_ccc)
+    {
+        printf("\r\n## Write protection supported ##");
+    }
+    if (SD_CCC_LOCK_CARD & temp_ccc)
+    {
+        printf("\r\n## Lock unlock supported ##");
+    }
+    if (SD_CCC_APPLICATION_SPECIFIC & temp_ccc)
+    {
+        printf("\r\n## Application specific supported ##");
+    }
+    if (SD_CCC_IO_MODE & temp_ccc)
+    {
+        printf("\r\n## I/O mode supported ##");
+    }
+    if (SD_CCC_SWITCH & temp_ccc)
+    {
+        printf("\r\n## Switch function supported ##");
+    }
+}
+
+void sd_demo()
+{
+    sd_error_enum sd_error;
+    uint16_t i = 5;
+
+    /* configure the NVIC */
+    nvic_irq_enable(SDIO_IRQn, 3, 0);
+
+    /* initialize the card */
+    do
+    {
+        sd_error = sd_io_init();
+    } while ((SD_OK != sd_error) && (--i));
+
+    if (i)
+    {
+        printf("\r\n Card init success!\r\n");
+    }
+    else
+    {
+        printf("\r\n Card init failed!\r\n");
+        while (1)
+        {
+        }
+    }
+
+    /* get the information of the card and print it out by USART */
+    card_info_get();
+
+    printf("\r\n\r\n Card test:");
+
+    /* single block operation test */
+    sd_error = sd_block_read(buf_read, 100 * 512, 512);
+    if (SD_OK != sd_error)
+    {
+        printf("\r\n Block read fail!");
+        while (1)
+        {
+        }
+    }
+    else
+    {
+        printf("\r\n Block read success!");
+    }
+
+    /* lock and unlock operation test */
+    if (SD_CCC_LOCK_CARD & sd_cardinfo.card_csd.ccc)
+    {
+        /* lock the card */
+        sd_error = sd_lock_unlock(SD_LOCK);
+        if (SD_OK != sd_error)
+        {
+            printf("\r\n Lock failed!");
+            while (1)
+            {
+            }
+        }
+        else
+        {
+            printf("\r\n The card is locked!");
+        }
+
+        /* unlock the card */
+        sd_error = sd_lock_unlock(SD_UNLOCK);
+        if (SD_OK != sd_error)
+        {
+            printf("\r\n Unlock failed!");
+            while (1)
+            {
+            }
+        }
+        else
+        {
+            printf("\r\n The card is unlocked!");
+        }
+
+        sd_error = sd_block_read(buf_read, 100 * 512, 512);
+        if (SD_OK != sd_error)
+        {
+            printf("\r\n Block read fail!");
+            while (1)
+            {
+            }
+        }
+        else
+        {
+            printf("\r\n Block read success!");
+        }
+    }
+
+    /* multiple blocks operation test */
+    sd_error = sd_multiblocks_read(buf_read, 200 * 512, 512, 3);
+    if (SD_OK != sd_error)
+    {
+        printf("\r\n Multiple block read fail!");
+        while (1)
+        {
+        }
+    }
+    else
+    {
+        printf("\r\n Multiple block read success!");
+    }
+}
+
 /*!
     \brief      main function
     \param[in]  none
@@ -48,14 +292,14 @@ void gd_log_com_init()
 */
 int main(void)
 {
-    /* peripheral clock enable */
-    rcu_config();
+    // NVIC config
+    nvic_priority_group_set(NVIC_PRIGROUP_PRE4_SUB0);
     // GPIO remap config
     rcu_periph_clock_enable(RCU_AF);
     gpio_pin_remap_config(GPIO_SWJ_SWDPENABLE_REMAP, ENABLE);
 
     spi2_config();
-    // i2c_config();
+    i2c_config();
 
     systick_config();
     gd_log_com_init();
@@ -66,6 +310,8 @@ int main(void)
     printf("\r\nCK_AHB is %d", rcu_clock_freq_get(CK_AHB));
     printf("\r\nCK_APB1 is %d", rcu_clock_freq_get(CK_APB1));
     printf("\r\nCK_APB2 is %d\r\n", rcu_clock_freq_get(CK_APB2));
+
+    sd_demo();
 
     while (1)
     {
@@ -106,7 +352,6 @@ int main(void)
 */
 void rcu_config(void)
 {
-
     rcu_periph_clock_enable(RCU_SPI1);
     rcu_periph_clock_enable(RCU_SPI2);
     rcu_periph_clock_enable(RCU_GPIOA);

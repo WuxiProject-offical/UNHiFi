@@ -559,6 +559,11 @@
               <FileType>1</FileType>
               <FilePath>.\MiddleWare\spi.c</FilePath>
             </File>
+            <File>
+              <FileName>sdcard.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\MiddleWare\sdcard.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

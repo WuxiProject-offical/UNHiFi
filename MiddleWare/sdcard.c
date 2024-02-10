@@ -111,7 +111,7 @@ OF SUCH DAMAGE.
 
 #define SDIO_MASK_INTC_FLAGS ((uint32_t)0x00C007FF) /* mask flags of SDIO_INTC */
 
-uint32_t sd_scr[2] = {0, 0}; /* content of SCR register */
+volatile uint32_t sd_scr[2] = {0, 0}; /* content of SCR register */
 
 static sdio_card_type_enum cardtype = SDIO_STD_CAPACITY_SD_CARD_V1_1; /* SD card type */
 static uint32_t sd_csd[4] = {0, 0, 0, 0};                             /* content of CSD register */

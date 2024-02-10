@@ -211,7 +211,7 @@ typedef enum
   SD_TRANSFER_IN_PROGRESS                 /* data transfer is in progress */
 }sd_transfer_state_enum;
 
-extern uint32_t sd_scr[2];                /* SD card SCR */
+extern volatile uint32_t sd_scr[2];                /* SD card SCR */
 
 /* function declarations */
 /* initialize the SD card and make it in standby state */

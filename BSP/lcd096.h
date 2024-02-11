@@ -4,6 +4,8 @@
 #define LCD_W 160
 #define LCD_H 80
 
+#define LCD_SPI_TIMEOUT 114
+
 // LCD variety 1
 //#define LCD_XOFFSET 1
 //#define LCD_YOFFSET 26

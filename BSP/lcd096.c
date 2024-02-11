@@ -11,53 +11,67 @@
 
 void LCD_WR_DATA8(uint8_t dat)
 {
-	LCD_CS_EN();
+	uint32_t timeout = LCD_SPI_TIMEOUT;
+	// LCD_CS_EN();
 	while (RESET == spi_i2s_flag_get(SPI2, SPI_FLAG_TBE))
 	{
-		__NOP();
+		if (--timeout == 0)
+			break;
 	}
 	spi_i2s_data_transmit(SPI2, dat);
+	timeout = LCD_SPI_TIMEOUT;
 	while (SET == spi_i2s_flag_get(SPI2, SPI_FLAG_TRANS))
 	{
-		__NOP();
+		if (--timeout == 0)
+			break;
 	}
-	LCD_CS_DIS();
+	// LCD_CS_DIS();
 }
 
 void LCD_WR_DATA(uint16_t dat)
 {
-	LCD_CS_EN();
+	uint32_t timeout = LCD_SPI_TIMEOUT;
+	// LCD_CS_EN();
 	while (RESET == spi_i2s_flag_get(SPI2, SPI_FLAG_TBE))
 	{
-		__NOP();
+		if (--timeout == 0)
+			break;
 	}
 	spi_i2s_data_transmit(SPI2, (dat >> 8) & 0x00ff);
+	timeout = LCD_SPI_TIMEOUT;
 	while (RESET == spi_i2s_flag_get(SPI2, SPI_FLAG_TBE))
 	{
-		__NOP();
+		if (--timeout == 0)
+			break;
 	}
 	spi_i2s_data_transmit(SPI2, dat & 0x00ff);
+	timeout = LCD_SPI_TIMEOUT;
 	while (SET == spi_i2s_flag_get(SPI2, SPI_FLAG_TRANS))
 	{
-		__NOP();
+		if (--timeout == 0)
+			break;
 	}
-	LCD_CS_DIS();
+	// LCD_CS_DIS();
 }
 
 void LCD_WR_REG(uint8_t dat)
 {
 	LCD_DC_SET(0);
-	LCD_CS_EN();
+	// LCD_CS_EN();
+	uint32_t timeout = LCD_SPI_TIMEOUT;
 	while (RESET == spi_i2s_flag_get(SPI2, SPI_FLAG_TBE))
 	{
-		__NOP();
+		if (--timeout == 0)
+			break;
 	}
 	spi_i2s_data_transmit(SPI2, dat);
+	timeout = LCD_SPI_TIMEOUT;
 	while (SET == spi_i2s_flag_get(SPI2, SPI_FLAG_TRANS))
 	{
-		__NOP();
+		if (--timeout == 0)
+			break;
 	}
-	LCD_CS_DIS();
+	// LCD_CS_DIS();
 	LCD_DC_SET(1);
 }
 

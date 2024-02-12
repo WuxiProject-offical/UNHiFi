@@ -68,6 +68,8 @@ void audio_test(void)
     }
     f_lseek(&file, 44);
     i2s_config();
+    tpa6130_RegWrite(1, 0xc0);
+    tpa6130_RegWrite(2, 0x15); // -19.6dB
     uint8_t line[256], usingbuf = 0;
     uint32_t len1 = 256, len2 = 256;
     res = f_read(&file, &line, len1, &len2);
@@ -158,8 +160,6 @@ int main(void)
     printf("\r\nCK_APB1 is %d", rcu_clock_freq_get(CK_APB1));
     printf("\r\nCK_APB2 is %d\r\n", rcu_clock_freq_get(CK_APB2));
 
-    tpa6130_RegWrite(1, 0xc0);
-    tpa6130_RegWrite(2, 0x1d); //-14.5dB
     audio_test();
 
     while (1)

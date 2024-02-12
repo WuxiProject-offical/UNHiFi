@@ -579,6 +579,11 @@
               <FileType>1</FileType>
               <FilePath>.\MiddleWare\ffunicode_flash.c</FilePath>
             </File>
+            <File>
+              <FileName>i2s.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\MiddleWare\i2s.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

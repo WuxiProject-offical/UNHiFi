@@ -13,6 +13,10 @@ uint8_t spiflash_Init(void)
 void spiflash_Read(uint32_t addr, uint8_t *buf, uint32_t len)
 {
     uint8_t readSeq[4] = {0x03, (addr >> 16) & 0x000000ff, (addr >> 8) & 0x000000ff, (addr >> 0) & 0x000000ff};
+    while (RESET != spi_i2s_flag_get(SPI2, SPI_FLAG_RBNE))
+    {
+        (void)spi_i2s_data_receive(SPI2);
+    }
     SPIFLASH_CS_EN();
     uint32_t timeout = SPIFLASH_SPI_TIMEOUT;
     for (uint8_t i = 0; i < 4; i++)
@@ -24,6 +28,13 @@ void spiflash_Read(uint32_t addr, uint8_t *buf, uint32_t len)
                 break;
         }
         spi_i2s_data_transmit(SPI2, readSeq[i]);
+        timeout = SPIFLASH_SPI_TIMEOUT;
+        while (RESET == spi_i2s_flag_get(SPI2, SPI_FLAG_RBNE))
+        {
+            if (--timeout == 0)
+                break;
+        }
+        (void)spi_i2s_data_receive(SPI2);
     }
     for (uint32_t i = 0; i < len; i++)
     {
@@ -63,6 +74,13 @@ void spiflash_Unlock(void)
     }
     spi_i2s_data_transmit(SPI2, 0x06); // 0x06 WRE
     timeout = SPIFLASH_SPI_TIMEOUT;
+    while (RESET == spi_i2s_flag_get(SPI2, SPI_FLAG_RBNE))
+    {
+        if (--timeout == 0)
+            break;
+    }
+    (void)spi_i2s_data_receive(SPI2);
+    timeout = SPIFLASH_SPI_TIMEOUT;
     while (SET == spi_i2s_flag_get(SPI2, SPI_FLAG_TRANS))
     {
         if (--timeout == 0)
@@ -83,6 +101,13 @@ void spiflash_Lock(void)
     }
     spi_i2s_data_transmit(SPI2, 0x04); // 0x04 WRD
     timeout = SPIFLASH_SPI_TIMEOUT;
+    while (RESET == spi_i2s_flag_get(SPI2, SPI_FLAG_RBNE))
+    {
+        if (--timeout == 0)
+            break;
+    }
+    (void)spi_i2s_data_receive(SPI2);
+    timeout = SPIFLASH_SPI_TIMEOUT;
     while (SET == spi_i2s_flag_get(SPI2, SPI_FLAG_TRANS))
     {
         if (--timeout == 0)
@@ -102,6 +127,13 @@ void spiflash_Wait(void)
             break;
     }
     spi_i2s_data_transmit(SPI2, 0x05); // 0x05 ReadStatusReg1
+    timeout = SPIFLASH_SPI_TIMEOUT;
+    while (RESET == spi_i2s_flag_get(SPI2, SPI_FLAG_RBNE))
+    {
+        if (--timeout == 0)
+            break;
+    }
+    (void)spi_i2s_data_receive(SPI2);
     uint8_t busy = 0x01;
     while (busy)
     {
@@ -144,6 +176,13 @@ void spiflash_Erase4k(uint32_t addr)
                 break;
         }
         spi_i2s_data_transmit(SPI2, eraseSeq[i]);
+        timeout = SPIFLASH_SPI_TIMEOUT;
+        while (RESET == spi_i2s_flag_get(SPI2, SPI_FLAG_RBNE))
+        {
+            if (--timeout == 0)
+                break;
+        }
+        (void)spi_i2s_data_receive(SPI2);
     }
     timeout = SPIFLASH_SPI_TIMEOUT;
     while (SET == spi_i2s_flag_get(SPI2, SPI_FLAG_TRANS))
@@ -168,6 +207,13 @@ void spiflash_Erase32k(uint32_t addr)
                 break;
         }
         spi_i2s_data_transmit(SPI2, eraseSeq[i]);
+        timeout = SPIFLASH_SPI_TIMEOUT;
+        while (RESET == spi_i2s_flag_get(SPI2, SPI_FLAG_RBNE))
+        {
+            if (--timeout == 0)
+                break;
+        }
+        (void)spi_i2s_data_receive(SPI2);
     }
     timeout = SPIFLASH_SPI_TIMEOUT;
     while (SET == spi_i2s_flag_get(SPI2, SPI_FLAG_TRANS))
@@ -177,7 +223,6 @@ void spiflash_Erase32k(uint32_t addr)
     }
     SPIFLASH_CS_DIS();
 }
-
 
 void spiflash_WriteSector(uint32_t addr, uint8_t *buf, uint16_t len)
 {
@@ -195,6 +240,13 @@ void spiflash_WriteSector(uint32_t addr, uint8_t *buf, uint16_t len)
                 break;
         }
         spi_i2s_data_transmit(SPI2, writeSeq[i]);
+        timeout = SPIFLASH_SPI_TIMEOUT;
+        while (RESET == spi_i2s_flag_get(SPI2, SPI_FLAG_RBNE))
+        {
+            if (--timeout == 0)
+                break;
+        }
+        (void)spi_i2s_data_receive(SPI2);
     }
     for (uint32_t i = 0; i < len; i++)
     {
@@ -205,6 +257,13 @@ void spiflash_WriteSector(uint32_t addr, uint8_t *buf, uint16_t len)
                 break;
         }
         spi_i2s_data_transmit(SPI2, buf[i]);
+        timeout = SPIFLASH_SPI_TIMEOUT;
+        while (RESET == spi_i2s_flag_get(SPI2, SPI_FLAG_RBNE))
+        {
+            if (--timeout == 0)
+                break;
+        }
+        (void)spi_i2s_data_receive(SPI2);
     }
     timeout = SPIFLASH_SPI_TIMEOUT;
     while (SET == spi_i2s_flag_get(SPI2, SPI_FLAG_TRANS))

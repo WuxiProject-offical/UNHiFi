@@ -12,7 +12,7 @@ void spi2_config(void)
     rcu_periph_clock_enable(RCU_AF);
 
     // GPIO config
-    gpio_init(GPIOB, GPIO_MODE_AF_PP, GPIO_OSPEED_50MHZ, GPIO_PIN_3 | GPIO_PIN_5);
+    gpio_init(GPIOB, GPIO_MODE_AF_PP, GPIO_OSPEED_10MHZ, GPIO_PIN_3 | GPIO_PIN_5);
     gpio_init(GPIOB, GPIO_MODE_IN_FLOATING, GPIO_OSPEED_50MHZ, GPIO_PIN_4);
     gpio_init(GPIOB, GPIO_MODE_OUT_PP, GPIO_OSPEED_50MHZ, GPIO_PIN_6 | GPIO_PIN_9);
     gpio_bit_set(GPIOB, GPIO_PIN_6 | GPIO_PIN_9); // LCD&FLASH CS H
@@ -23,7 +23,7 @@ void spi2_config(void)
     spi_init_struct.frame_size = SPI_FRAMESIZE_8BIT;
     spi_init_struct.clock_polarity_phase = SPI_CK_PL_HIGH_PH_2EDGE;
     spi_init_struct.nss = SPI_NSS_SOFT;
-    spi_init_struct.prescale = SPI_PSC_4; // 36.864M
+    spi_init_struct.prescale = SPI_PSC_2; // 36.864M
     spi_init_struct.endian = SPI_ENDIAN_MSB;
     spi_init(SPI2, &spi_init_struct);
     spi_enable(SPI2);

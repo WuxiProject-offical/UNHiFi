@@ -575,11 +575,6 @@
               <FilePath>.\MiddleWare\ff.c</FilePath>
             </File>
             <File>
-              <FileName>ffsystem.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\MiddleWare\ffsystem.c</FilePath>
-            </File>
-            <File>
               <FileName>ffunicode_flash.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\MiddleWare\ffunicode_flash.c</FilePath>

@@ -394,6 +394,11 @@
               <FileType>1</FileType>
               <FilePath>.\main.c</FilePath>
             </File>
+            <File>
+              <FileName>ffdemo.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\ffdemo.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -555,14 +560,39 @@
               <FilePath>.\MiddleWare\systick.c</FilePath>
             </File>
             <File>
+              <FileName>sdcard.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\MiddleWare\sdcard.c</FilePath>
+            </File>
+            <File>
               <FileName>spi.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\MiddleWare\spi.c</FilePath>
             </File>
             <File>
-              <FileName>sdcard.c</FileName>
+              <FileName>diskio.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\MiddleWare\sdcard.c</FilePath>
+              <FilePath>.\MiddleWare\diskio.c</FilePath>
+            </File>
+            <File>
+              <FileName>ff.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\MiddleWare\ff.c</FilePath>
+            </File>
+            <File>
+              <FileName>ffsystem.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\MiddleWare\ffsystem.c</FilePath>
+            </File>
+            <File>
+              <FileName>ffunicode_flash.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\MiddleWare\ffunicode_flash.c</FilePath>
+            </File>
+            <File>
+              <FileName>xprintf.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\MiddleWare\xprintf.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -583,6 +613,11 @@
               <FileName>spiflash.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\BSP\spiflash.c</FilePath>
+            </File>
+            <File>
+              <FileName>mysd.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\BSP\mysd.c</FilePath>
             </File>
           </Files>
         </Group>

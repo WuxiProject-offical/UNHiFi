@@ -68,18 +68,6 @@ OF SUCH DAMAGE.
 #define SD_R6_ILLEGAL_COMMAND BIT(14)       /* command not legal for the card state */
 #define SD_R6_GENERAL_UNKNOWN_ERROR BIT(13) /* a general or an unknown error occurred during the operation */
 
-/* card state */
-#define SD_CARDSTATE_IDLE ((uint8_t)0x00)          /* card is in idle state */
-#define SD_CARDSTATE_READY ((uint8_t)0x01)         /* card is in ready state */
-#define SD_CARDSTATE_IDENTIFICAT ((uint8_t)0x02)   /* card is in identificat state */
-#define SD_CARDSTATE_STANDBY ((uint8_t)0x03)       /* card is in standby state */
-#define SD_CARDSTATE_TRANSFER ((uint8_t)0x04)      /* card is in transfer state */
-#define SD_CARDSTATE_DATA ((uint8_t)0x05)          /* card is in data sending state */
-#define SD_CARDSTATE_RECEIVING ((uint8_t)0x06)     /* card is in receiving state */
-#define SD_CARDSTATE_PROGRAMMING ((uint8_t)0x07)   /* card is in programming state */
-#define SD_CARDSTATE_DISCONNECT ((uint8_t)0x08)    /* card is in disconnect state */
-#define SD_CARDSTATE_LOCKED ((uint32_t)0x02000000) /* card is in locked state */
-
 #define SD_CHECK_PATTERN ((uint32_t)0x000001AA)  /* check pattern for CMD8 */
 #define SD_VOLTAGE_WINDOW ((uint32_t)0x80100000) /* host 3.3V request in ACMD41 */
 
@@ -137,8 +125,6 @@ static sd_error_enum r6_error_check(uint8_t cmdindex, uint16_t *prca);
 /* check if error occurs for R7 response */
 static sd_error_enum r7_error_check(void);
 
-/* get the state which the card is in */
-static sd_error_enum sd_card_state_get(uint8_t *pcardstate);
 /* configure the bus width mode */
 static sd_error_enum sd_bus_width_config(uint32_t buswidth);
 /* get the SCR of corresponding card */
@@ -1297,7 +1283,7 @@ sd_error_enum sd_multiblocks_write(uint32_t *pwritebuffer, uint64_t writeaddr, u
     \param[out] none
     \retval     sd_error_enum
 */
-sd_error_enum sd_erase(uint32_t startaddr, uint32_t endaddr)
+sd_error_enum sd_erase(uint64_t startaddr, uint64_t endaddr)
 {
     /* initialize the variables */
     sd_error_enum status = SD_OK;
@@ -2398,7 +2384,7 @@ static sd_error_enum r7_error_check(void)
       \arg        SD_CARDSTATE_LOCKED: card is in locked state
     \retval     sd_error_enum
 */
-static sd_error_enum sd_card_state_get(uint8_t *pcardstate)
+sd_error_enum sd_card_state_get(uint8_t *pcardstate)
 {
     sd_error_enum status = SD_OK;
     __IO uint32_t reg_status = 0, response = 0;

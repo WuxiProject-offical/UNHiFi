@@ -84,11 +84,11 @@ DRESULT disk_read(
 		sd_error_enum sderr;
 		if (count == 1)
 		{
-			sderr = sd_block_read((uint32_t*)buff, sector * 512ULL, 512);
+			sderr = sd_block_read_SectorAddr((uint32_t *)buff, (uint32_t)sector, 512);
 		}
 		else
 		{
-			sderr = sd_multiblocks_read((uint32_t*)buff, sector * 512ULL, 512, count);
+			sderr = sd_multiblocks_read_SectorAddr((uint32_t *)buff, (uint32_t)sector, 512, count);
 		}
 		(void)result;
 		if (sderr == SD_OK)

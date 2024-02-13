@@ -243,8 +243,10 @@ sd_error_enum sd_transfer_mode_config(uint32_t txmode);
 
 /* read a block data into a buffer from the specified address of a card */
 sd_error_enum sd_block_read(uint32_t *preadbuffer, uint64_t readaddr, uint16_t blocksize);
+sd_error_enum sd_block_read_SectorAddr(uint32_t *preadbuffer, uint32_t sectoraddr, uint16_t blocksize);
 /* read multiple blocks data into a buffer from the specified address of a card */
 sd_error_enum sd_multiblocks_read(uint32_t *preadbuffer, uint64_t readaddr, uint16_t blocksize, uint32_t blocksnumber);
+sd_error_enum sd_multiblocks_read_SectorAddr(uint32_t *preadbuffer, uint32_t sectoraddr, uint16_t blocksize, uint32_t blocksnumber);
 /* write a block data to the specified address of a card */
 sd_error_enum sd_block_write(uint32_t *pwritebuffer, uint64_t writeaddr, uint16_t blocksize);
 /* write multiple blocks data to the specified address of a card */

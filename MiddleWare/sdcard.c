@@ -611,6 +611,162 @@ sd_error_enum sd_block_read(uint32_t *preadbuffer, uint64_t readaddr, uint16_t b
 }
 
 /*!
+    \brief      read a block data into a buffer from the specified address of a card
+    \param[out] preadbuffer: a pointer that store a block read data
+    \param[in]  sectoraddr: the read data sector address
+    \param[in]  blocksize: the data block size
+    \retval     sd_error_enum
+*/
+sd_error_enum sd_block_read_SectorAddr(uint32_t *preadbuffer, uint32_t sectoraddr, uint16_t blocksize)
+{
+    /* initialize the variables */
+    sd_error_enum status = SD_OK;
+    uint32_t count = 0, align = 0, datablksize = SDIO_DATABLOCKSIZE_1BYTE, *ptempbuff = preadbuffer;
+    __IO uint32_t timeout = 0;
+
+    if (NULL == preadbuffer)
+    {
+        status = SD_PARAMETER_INVALID;
+        return status;
+    }
+
+    transerror = SD_OK;
+    transend = 0;
+    totalnumber_bytes = 0;
+    /* clear all DSM configuration */
+    sdio_data_config(0, 0, SDIO_DATABLOCKSIZE_1BYTE);
+    sdio_data_transfer_config(SDIO_TRANSMODE_BLOCK, SDIO_TRANSDIRECTION_TOCARD);
+    sdio_dsm_disable();
+    sdio_dma_disable();
+
+    /* check whether the card is locked */
+    if (sdio_response_get(SDIO_RESPONSE0) & SD_CARDSTATE_LOCKED)
+    {
+        status = SD_LOCK_UNLOCK_FAILED;
+        return status;
+    }
+
+    /* blocksize is fixed in 512B for SDHC card */
+    if (SDIO_HIGH_CAPACITY_SD_CARD == cardtype)
+    {
+        blocksize = 512;
+    }
+
+    align = blocksize & (blocksize - 1);
+    if ((blocksize > 0) && (blocksize <= 2048) && (0 == align))
+    {
+        datablksize = sd_datablocksize_get(blocksize);
+        /* send CMD16(SET_BLOCKLEN) to set the block length */
+        sdio_command_response_config(SD_CMD_SET_BLOCKLEN, (uint32_t)blocksize, SDIO_RESPONSETYPE_SHORT);
+        sdio_wait_type_set(SDIO_WAITTYPE_NO);
+        sdio_csm_enable();
+
+        /* check if some error occurs */
+        status = r1_error_check(SD_CMD_SET_BLOCKLEN);
+        if (SD_OK != status)
+        {
+            return status;
+        }
+    }
+    else
+    {
+        status = SD_PARAMETER_INVALID;
+        return status;
+    }
+
+    stopcondition = 0;
+    totalnumber_bytes = blocksize;
+
+    /* configure SDIO data transmission */
+    sdio_data_config(SD_DATATIMEOUT, totalnumber_bytes, datablksize);
+    sdio_data_transfer_config(SDIO_TRANSMODE_BLOCK, SDIO_TRANSDIRECTION_TOSDIO);
+    sdio_dsm_enable();
+
+    /* send CMD17(READ_SINGLE_BLOCK) to read a block */
+    sdio_command_response_config(SD_CMD_READ_SINGLE_BLOCK, sectoraddr, SDIO_RESPONSETYPE_SHORT);
+    sdio_wait_type_set(SDIO_WAITTYPE_NO);
+    sdio_csm_enable();
+    /* check if some error occurs */
+    status = r1_error_check(SD_CMD_READ_SINGLE_BLOCK);
+    if (SD_OK != status)
+    {
+        return status;
+    }
+
+    if (SD_POLLING_MODE == transmode)
+    {
+        /* polling mode */
+        while (!sdio_flag_get(SDIO_FLAG_DTCRCERR | SDIO_FLAG_DTTMOUT | SDIO_FLAG_RXORE | SDIO_FLAG_DTBLKEND | SDIO_FLAG_STBITE))
+        {
+            if (RESET != sdio_flag_get(SDIO_FLAG_RFH))
+            {
+                /* at least 8 words can be read in the FIFO */
+                for (count = 0; count < SD_FIFOHALF_WORDS; count++)
+                {
+                    *(ptempbuff + count) = sdio_data_read();
+                }
+                ptempbuff += SD_FIFOHALF_WORDS;
+            }
+        }
+
+        /* whether some error occurs and return it */
+        if (RESET != sdio_flag_get(SDIO_FLAG_DTCRCERR))
+        {
+            status = SD_DATA_CRC_ERROR;
+            sdio_flag_clear(SDIO_FLAG_DTCRCERR);
+            return status;
+        }
+        else if (RESET != sdio_flag_get(SDIO_FLAG_DTTMOUT))
+        {
+            status = SD_DATA_TIMEOUT;
+            sdio_flag_clear(SDIO_FLAG_DTTMOUT);
+            return status;
+        }
+        else if (RESET != sdio_flag_get(SDIO_FLAG_RXORE))
+        {
+            status = SD_RX_OVERRUN_ERROR;
+            sdio_flag_clear(SDIO_FLAG_RXORE);
+            return status;
+        }
+        else if (RESET != sdio_flag_get(SDIO_FLAG_STBITE))
+        {
+            status = SD_START_BIT_ERROR;
+            sdio_flag_clear(SDIO_FLAG_STBITE);
+            return status;
+        }
+        while (RESET != sdio_flag_get(SDIO_FLAG_RXDTVAL))
+        {
+            *ptempbuff = sdio_data_read();
+            ++ptempbuff;
+        }
+        /* clear the SDIO_INTC flags */
+        sdio_flag_clear(SDIO_MASK_INTC_FLAGS);
+    }
+    else if (SD_DMA_MODE == transmode)
+    {
+        /* DMA mode */
+        /* enable the SDIO corresponding interrupts and DMA function */
+        sdio_interrupt_enable(SDIO_INT_CCRCERR | SDIO_INT_DTTMOUT | SDIO_INT_RXORE | SDIO_INT_DTEND | SDIO_INT_STBITE);
+        sdio_dma_enable();
+        sd_dma_receive_config(preadbuffer, blocksize);
+        timeout = 100000;
+        while ((RESET == dma_flag_get(DMA1, DMA_CH3, DMA_FLAG_FTF)) && (timeout > 0))
+        {
+            timeout--;
+            if (0 == timeout)
+            {
+                return SD_ERROR;
+            }
+        }
+    }
+    else
+    {
+        status = SD_PARAMETER_INVALID;
+    }
+    return status;
+}
+
+/*!
     \brief      read multiple blocks data into a buffer from the specified address of a card
     \param[out] preadbuffer: a pointer that store multiple blocks read data
     \param[in]  readaddr: the read data address
@@ -695,6 +851,198 @@ sd_error_enum sd_multiblocks_read(uint32_t *preadbuffer, uint64_t readaddr, uint
 
         /* send CMD18(READ_MULTIPLE_BLOCK) to read multiple blocks */
         sdio_command_response_config(SD_CMD_READ_MULTIPLE_BLOCK, readaddr, SDIO_RESPONSETYPE_SHORT);
+        sdio_wait_type_set(SDIO_WAITTYPE_NO);
+        sdio_csm_enable();
+        /* check if some error occurs */
+        status = r1_error_check(SD_CMD_READ_MULTIPLE_BLOCK);
+        if (SD_OK != status)
+        {
+            return status;
+        }
+
+        if (SD_POLLING_MODE == transmode)
+        {
+            /* polling mode */
+            while (!sdio_flag_get(SDIO_FLAG_DTCRCERR | SDIO_FLAG_DTTMOUT | SDIO_FLAG_RXORE | SDIO_FLAG_DTEND | SDIO_FLAG_STBITE))
+            {
+                if (RESET != sdio_flag_get(SDIO_FLAG_RFH))
+                {
+                    /* at least 8 words can be read in the FIFO */
+                    for (count = 0; count < SD_FIFOHALF_WORDS; count++)
+                    {
+                        *(ptempbuff + count) = sdio_data_read();
+                    }
+                    ptempbuff += SD_FIFOHALF_WORDS;
+                }
+            }
+
+            /* whether some error occurs and return it */
+            if (RESET != sdio_flag_get(SDIO_FLAG_DTCRCERR))
+            {
+                status = SD_DATA_CRC_ERROR;
+                sdio_flag_clear(SDIO_FLAG_DTCRCERR);
+                return status;
+            }
+            else if (RESET != sdio_flag_get(SDIO_FLAG_DTTMOUT))
+            {
+                status = SD_DATA_TIMEOUT;
+                sdio_flag_clear(SDIO_FLAG_DTTMOUT);
+                return status;
+            }
+            else if (RESET != sdio_flag_get(SDIO_FLAG_RXORE))
+            {
+                status = SD_RX_OVERRUN_ERROR;
+                sdio_flag_clear(SDIO_FLAG_RXORE);
+                return status;
+            }
+            else if (RESET != sdio_flag_get(SDIO_FLAG_STBITE))
+            {
+                status = SD_START_BIT_ERROR;
+                sdio_flag_clear(SDIO_FLAG_STBITE);
+                return status;
+            }
+            while (RESET != sdio_flag_get(SDIO_FLAG_RXDTVAL))
+            {
+                *ptempbuff = sdio_data_read();
+                ++ptempbuff;
+            }
+
+            if (RESET != sdio_flag_get(SDIO_FLAG_DTEND))
+            {
+                if ((SDIO_STD_CAPACITY_SD_CARD_V1_1 == cardtype) || (SDIO_STD_CAPACITY_SD_CARD_V2_0 == cardtype) ||
+                    (SDIO_HIGH_CAPACITY_SD_CARD == cardtype))
+                {
+                    /* send CMD12(STOP_TRANSMISSION) to stop transmission */
+                    sdio_command_response_config(SD_CMD_STOP_TRANSMISSION, (uint32_t)0x0, SDIO_RESPONSETYPE_SHORT);
+                    sdio_wait_type_set(SDIO_WAITTYPE_NO);
+                    sdio_csm_enable();
+                    /* check if some error occurs */
+                    status = r1_error_check(SD_CMD_STOP_TRANSMISSION);
+                    if (SD_OK != status)
+                    {
+                        return status;
+                    }
+                }
+            }
+            sdio_flag_clear(SDIO_MASK_INTC_FLAGS);
+        }
+        else if (SD_DMA_MODE == transmode)
+        {
+            /* DMA mode */
+            /* enable the SDIO corresponding interrupts and DMA function */
+            sdio_interrupt_enable(SDIO_INT_DTCRCERR | SDIO_INT_DTTMOUT | SDIO_INT_RXORE | SDIO_INT_DTEND | SDIO_INT_STBITE);
+            sdio_dma_enable();
+            sd_dma_receive_config(preadbuffer, totalnumber_bytes);
+
+            timeout = 100000;
+            while ((RESET == dma_flag_get(DMA1, DMA_CH3, DMA_FLAG_FTF)) && (timeout > 0))
+            {
+                timeout--;
+                if (0 == timeout)
+                {
+                    return SD_ERROR;
+                }
+            }
+            while ((0 == transend) && (SD_OK == transerror))
+            {
+            }
+            if (SD_OK != transerror)
+            {
+                return transerror;
+            }
+        }
+        else
+        {
+            status = SD_PARAMETER_INVALID;
+        }
+    }
+    return status;
+}
+
+/*!
+    \brief      read multiple blocks data into a buffer from the specified address of a card
+    \param[out] preadbuffer: a pointer that store multiple blocks read data
+    \param[in]  sectoraddr: the read data sector address
+    \param[in]  blocksize: the data block size
+    \param[in]  blocksnumber: number of blocks that will be read
+    \retval     sd_error_enum
+*/
+sd_error_enum sd_multiblocks_read_SectorAddr(uint32_t *preadbuffer, uint32_t sectoraddr, uint16_t blocksize, uint32_t blocksnumber)
+{
+    /* initialize the variables */
+    sd_error_enum status = SD_OK;
+    uint32_t count = 0, align = 0, datablksize = SDIO_DATABLOCKSIZE_1BYTE, *ptempbuff = preadbuffer;
+    __IO uint32_t timeout = 0;
+
+    if (NULL == preadbuffer)
+    {
+        status = SD_PARAMETER_INVALID;
+        return status;
+    }
+
+    transerror = SD_OK;
+    transend = 0;
+    totalnumber_bytes = 0;
+    /* clear all DSM configuration */
+    sdio_data_config(0, 0, SDIO_DATABLOCKSIZE_1BYTE);
+    sdio_data_transfer_config(SDIO_TRANSMODE_BLOCK, SDIO_TRANSDIRECTION_TOCARD);
+    sdio_dsm_disable();
+    sdio_dma_disable();
+
+    /* check whether the card is locked */
+    if (sdio_response_get(SDIO_RESPONSE0) & SD_CARDSTATE_LOCKED)
+    {
+        status = SD_LOCK_UNLOCK_FAILED;
+        return status;
+    }
+
+    /* blocksize is fixed in 512B for SDHC card */
+    if (SDIO_HIGH_CAPACITY_SD_CARD == cardtype)
+    {
+        blocksize = 512;
+    }
+
+    align = blocksize & (blocksize - 1);
+    if ((blocksize > 0) && (blocksize <= 2048) && (0 == align))
+    {
+        datablksize = sd_datablocksize_get(blocksize);
+        /* send CMD16(SET_BLOCKLEN) to set the block length */
+        sdio_command_response_config(SD_CMD_SET_BLOCKLEN, (uint32_t)blocksize, SDIO_RESPONSETYPE_SHORT);
+        sdio_wait_type_set(SDIO_WAITTYPE_NO);
+        sdio_csm_enable();
+
+        /* check if some error occurs */
+        status = r1_error_check(SD_CMD_SET_BLOCKLEN);
+        if (SD_OK != status)
+        {
+            return status;
+        }
+    }
+    else
+    {
+        status = SD_PARAMETER_INVALID;
+        return status;
+    }
+
+    if (blocksnumber > 1)
+    {
+        if (blocksnumber * blocksize > SD_MAX_DATA_LENGTH)
+        {
+            /* exceeds the maximum length */
+            status = SD_PARAMETER_INVALID;
+            return status;
+        }
+
+        stopcondition = 1;
+        totalnumber_bytes = blocksnumber * blocksize;
+
+        /* configure the SDIO data transmission */
+        sdio_data_config(SD_DATATIMEOUT, totalnumber_bytes, datablksize);
+        sdio_data_transfer_config(SDIO_TRANSMODE_BLOCK, SDIO_TRANSDIRECTION_TOSDIO);
+        sdio_dsm_enable();
+
+        /* send CMD18(READ_MULTIPLE_BLOCK) to read multiple blocks */
+        sdio_command_response_config(SD_CMD_READ_MULTIPLE_BLOCK, sectoraddr, SDIO_RESPONSETYPE_SHORT);
         sdio_wait_type_set(SDIO_WAITTYPE_NO);
         sdio_csm_enable();
         /* check if some error occurs */

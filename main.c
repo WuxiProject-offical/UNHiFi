@@ -69,7 +69,7 @@ void audio_test(void)
     f_lseek(&file, 44);
     i2s_config();
     tpa6130_RegWrite(1, 0xc0);
-    tpa6130_RegWrite(2, 0x15); // -19.6dB
+    tpa6130_RegWrite(2, 0x08); // -36.5dB
     uint8_t line[256], usingbuf = 0;
     uint32_t len1 = 256, len2 = 256;
     res = f_read(&file, &line, len1, &len2);

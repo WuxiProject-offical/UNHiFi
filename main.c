@@ -16,7 +16,10 @@
 #include "lcd096.h"
 #include "mysd.h"
 
-uint16_t audio_buffer[256];
+#define SAMPLES_OF_BUFFER 1024
+
+uint16_t audio_buffer[SAMPLES_OF_BUFFER * 2];
+uint8_t line[SAMPLES_OF_BUFFER * 2];
 
 void gd_log_com_init()
 {
@@ -59,7 +62,7 @@ void audio_test(void)
         printf("Mount failed: code %d\r\n", res);
         return;
     }
-    res = f_open(&file, "0:/227 - 理解者_01.wav", FA_READ);
+    res = f_open(&file, "0:/欅坂46 - 世界には愛しかない_24in32.wav", FA_READ);
     if (res)
     {
         printf("Open wave file failed: code %d\r\n", res);
@@ -67,24 +70,26 @@ void audio_test(void)
     }
     f_lseek(&file, 44);
     i2s_config();
-    i2s_SetFs(I2S_FSOPT_44K1);
+    i2s_SetFs(I2S_FSOPT_192K);
+    i2s_SetFrameFormat(I2S_FRAMEFORMAT_DT24B_CH32B);
     tpa6130_RegWrite(1, 0xc0);
-    tpa6130_RegWrite(2, 0x08); // -36.5dB
-    uint8_t line[256], usingbuf = 0;
-    uint32_t len1 = 256, len2 = 256;
+    tpa6130_RegWrite(2, 0x0c); // -36.5dB
+    uint8_t usingbuf = 0;
+    uint32_t len1 = SAMPLES_OF_BUFFER * 2, len2 = SAMPLES_OF_BUFFER * 2;
     res = f_read(&file, &line, len1, &len2);
     if (res)
     {
         printf("Read wave file failed: code %d\r\n", res);
         return;
     }
-    for (int i = 0; i < len2; i += 2)
+    for (int i = 0; i < len2; i += 4)
     {
-        audio_buffer[i / 2] = (line[i + 1] << 8) + line[i];
+        audio_buffer[i / 2 + 1] = (line[i + 1] << 8) + line[i];
+        audio_buffer[i / 2] = (line[i + 3] << 8) + line[i + 2];
     }
     i2s_DMAConfig16(audio_buffer, len2 / 2);
     i2s_DMAStart();
-    len1 = len2 = 256;
+    len1 = len2 = SAMPLES_OF_BUFFER * 2;
     while (len1 == len2)
     {
         res = f_read(&file, &line, len1, &len2);
@@ -95,32 +100,34 @@ void audio_test(void)
         }
         if (usingbuf == 0)
         {
-            for (int i = 0; i < len2; i += 2)
+            for (int i = 0; i < len2; i += 4)
             {
-                audio_buffer[128 + i / 2] = (line[i + 1] << 8) + line[i];
+                audio_buffer[SAMPLES_OF_BUFFER + i / 2 + 1] = (line[i + 1] << 8) + line[i];
+                audio_buffer[SAMPLES_OF_BUFFER + i / 2] = (line[i + 3] << 8) + line[i + 2];
             }
             while (RESET == dma_flag_get(DMA0, DMA_CH4, DMA_INTF_FTFIF))
                 ;
             dma_flag_clear(DMA0, DMA_CH4, DMA_INTF_FTFIF);
             i2s_DMAStop();
-            i2s_DMASetSrc(audio_buffer + 128, len2 / 2);
-            i2s_DMAStart();
             usingbuf = 1;
+            i2s_DMASetSrc(audio_buffer + SAMPLES_OF_BUFFER, len2 / 2);
+            i2s_DMAStart();
         }
         else
         {
             // using 1, fill 0 here.
-            for (int i = 0; i < len2; i += 2)
+            for (int i = 0; i < len2; i += 4)
             {
-                audio_buffer[i / 2] = (line[i + 1] << 8) + line[i];
+                audio_buffer[i / 2 + 1] = (line[i + 1] << 8) + line[i];
+                audio_buffer[i / 2] = (line[i + 3] << 8) + line[i + 2];
             }
             while (RESET == dma_flag_get(DMA0, DMA_CH4, DMA_INTF_FTFIF))
                 ;
             dma_flag_clear(DMA0, DMA_CH4, DMA_INTF_FTFIF);
             i2s_DMAStop();
+            usingbuf = 0;
             i2s_DMASetSrc(audio_buffer, len2 / 2);
             i2s_DMAStart();
-            usingbuf = 0;
         }
     }
     res = f_close(&file);

@@ -50,7 +50,7 @@ void i2s_DMAConfig32(uint32_t *srcbuf, uint32_t len)
     dma_init_struct.direction = DMA_MEMORY_TO_PERIPHERAL;
     dma_init_struct.memory_width = DMA_MEMORY_WIDTH_32BIT;
     dma_init_struct.periph_width = DMA_PERIPHERAL_WIDTH_32BIT;
-    dma_init_struct.priority = DMA_PRIORITY_MEDIUM;
+    dma_init_struct.priority = DMA_PRIORITY_HIGH;
     dma_init_struct.number = len;
     dma_init_struct.periph_inc = DMA_PERIPH_INCREASE_DISABLE;
     dma_init_struct.memory_inc = DMA_MEMORY_INCREASE_ENABLE;
@@ -70,7 +70,7 @@ void i2s_DMAConfig16(uint16_t *srcbuf, uint32_t len)
     dma_init_struct.direction = DMA_MEMORY_TO_PERIPHERAL;
     dma_init_struct.memory_width = DMA_MEMORY_WIDTH_16BIT;
     dma_init_struct.periph_width = DMA_PERIPHERAL_WIDTH_16BIT;
-    dma_init_struct.priority = DMA_PRIORITY_MEDIUM;
+    dma_init_struct.priority = DMA_PRIORITY_HIGH;
     dma_init_struct.number = len;
     dma_init_struct.periph_inc = DMA_PERIPH_INCREASE_DISABLE;
     dma_init_struct.memory_inc = DMA_MEMORY_INCREASE_ENABLE;

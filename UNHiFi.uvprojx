@@ -314,7 +314,7 @@
           </ArmAdsMisc>
           <Cads>
             <interw>1</interw>
-            <Optim>1</Optim>
+            <Optim>6</Optim>
             <oTime>0</oTime>
             <SplitLS>0</SplitLS>
             <OneElfS>1</OneElfS>
@@ -583,6 +583,11 @@
               <FileName>i2s.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\MiddleWare\i2s.c</FilePath>
+            </File>
+            <File>
+              <FileName>flac.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\MiddleWare\flac.c</FilePath>
             </File>
           </Files>
         </Group>

@@ -23,6 +23,12 @@ void i2s_config(void)
     i2s_enable(SPI1);
 }
 
+void i2s_DMASetSrc(void *srcaddr, uint32_t len)
+{
+    DMA_CHMADDR(DMA0, DMA_CH4) = (uint32_t)srcaddr;
+    DMA_CHCNT(DMA0, DMA_CH4) = (((uint32_t)len) & DMA_CHANNEL_CNT_MASK);
+}
+
 void i2s_DMAConfig32(uint32_t *srcbuf, uint32_t len)
 {
     dma_parameter_struct dma_init_struct;

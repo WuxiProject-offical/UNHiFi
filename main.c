@@ -101,7 +101,9 @@ void audio_test(void)
             }
             while (RESET == dma_flag_get(DMA0, DMA_CH4, DMA_INTF_FTFIF))
                 ;
-            i2s_DMAConfig16(audio_buffer + 128, len2 / 2);
+            dma_flag_clear(DMA0, DMA_CH4, DMA_INTF_FTFIF);
+            i2s_DMAStop();
+            i2s_DMASetSrc(audio_buffer + 128, len2 / 2);
             i2s_DMAStart();
             usingbuf = 1;
         }
@@ -114,7 +116,9 @@ void audio_test(void)
             }
             while (RESET == dma_flag_get(DMA0, DMA_CH4, DMA_INTF_FTFIF))
                 ;
-            i2s_DMAConfig16(audio_buffer, len2 / 2);
+            dma_flag_clear(DMA0, DMA_CH4, DMA_INTF_FTFIF);
+            i2s_DMAStop();
+            i2s_DMASetSrc(audio_buffer, len2 / 2);
             i2s_DMAStart();
             usingbuf = 0;
         }

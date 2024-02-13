@@ -105,7 +105,7 @@ static sdio_card_type_enum cardtype = SDIO_STD_CAPACITY_SD_CARD_V1_1; /* SD card
 static uint32_t sd_csd[4] = {0, 0, 0, 0};                             /* content of CSD register */
 static uint32_t sd_cid[4] = {0, 0, 0, 0};                             /* content of CID register */
 static uint16_t sd_rca = 0;                                           /* RCA of SD card */
-static uint32_t transmode = SD_POLLING_MODE;
+static uint32_t transmode = SD_DMA_MODE;
 static uint32_t totalnumber_bytes = 0, stopcondition = 0;
 static __IO sd_error_enum transerror = SD_OK;
 static __IO uint32_t transend = 0, number_bytes = 0;

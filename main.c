@@ -15,7 +15,6 @@
 #include "tpa6130.h"
 #include "lcd096.h"
 #include "mysd.h"
-#include "spiflash.h"
 
 uint16_t audio_buffer[256];
 
@@ -60,7 +59,7 @@ void audio_test(void)
         printf("Mount failed: code %d\r\n", res);
         return;
     }
-    res = f_open(&file, "0:/°æô—€‡46°ø2023.05.30 °∏Start over!°π .wav", FA_READ);
+    res = f_open(&file, "0:/227 - ¿ÌΩ‚’ﬂ_01.wav", FA_READ);
     if (res)
     {
         printf("Open wave file failed: code %d\r\n", res);
@@ -68,6 +67,7 @@ void audio_test(void)
     }
     f_lseek(&file, 44);
     i2s_config();
+    i2s_SetFs(I2S_FSOPT_44K1);
     tpa6130_RegWrite(1, 0xc0);
     tpa6130_RegWrite(2, 0x08); // -36.5dB
     uint8_t line[256], usingbuf = 0;

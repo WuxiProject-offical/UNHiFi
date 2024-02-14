@@ -7,7 +7,9 @@
 
 uint8_t tpa6130_Init(void)
 {
-	return 0;
+    tpa6130_RegWrite(1, 0xc0); // enable amp
+    tpa6130_RegWrite(2, 0x00); // -59.5dB
+    return 0;
 }
 
 uint8_t tpa6130_RegRead(uint8_t regAddr)
@@ -347,4 +349,9 @@ void tpa6130_RegWrite(uint8_t regAddr, uint8_t regVal)
             break;
         }
     }
+}
+
+void tpa6130_SetVolume(uint8_t vol)
+{
+    tpa6130_RegWrite(2, (vol <= 64) ? vol : 0xC0);
 }

@@ -72,8 +72,7 @@ void audio_test(void)
     i2s_config();
     i2s_SetFs(I2S_FSOPT_192K);
     i2s_SetFrameFormat(I2S_FRAMEFORMAT_DT24B_CH32B);
-    tpa6130_RegWrite(1, 0xc0);
-    tpa6130_RegWrite(2, 0x0c); // -36.5dB
+    tpa6130_SetVolume(0x0c); // -33.3db
     uint8_t usingbuf = 0;
     uint32_t len1 = SAMPLES_OF_BUFFER * 2, len2 = SAMPLES_OF_BUFFER * 2;
     res = f_read(&file, &line, len1, &len2);
@@ -165,6 +164,7 @@ int main(void)
     gd_log_com_init();
 
     LCD_Init();
+    tpa6130_Init();
 
     printf("\r\nCK_SYS is %d", rcu_clock_freq_get(CK_SYS));
     printf("\r\nCK_AHB is %d", rcu_clock_freq_get(CK_AHB));

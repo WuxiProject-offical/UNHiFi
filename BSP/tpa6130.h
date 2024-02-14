@@ -23,5 +23,6 @@ typedef enum
 uint8_t tpa6130_Init(void);
 uint8_t tpa6130_RegRead(uint8_t regAddr);
 void tpa6130_RegWrite(uint8_t regAddr, uint8_t regVal);
+void tpa6130_SetVolume(uint8_t vol);
 
 #endif /* AT24CXX_H */

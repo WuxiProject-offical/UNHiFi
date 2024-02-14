@@ -166,13 +166,19 @@ int main(void)
     LCD_Init();
     tpa6130_Init();
 
+    {
+        rcu_periph_clock_enable(RCU_GPIOC);
+        gpio_init(GPIOC, GPIO_MODE_OUT_PP, GPIO_OSPEED_10MHZ, GPIO_PIN_13);
+        gpio_bit_reset(GPIOC, GPIO_PIN_13);
+    }
+
     printf("\r\nCK_SYS is %d", rcu_clock_freq_get(CK_SYS));
     printf("\r\nCK_AHB is %d", rcu_clock_freq_get(CK_AHB));
     printf("\r\nCK_APB1 is %d", rcu_clock_freq_get(CK_APB1));
     printf("\r\nCK_APB2 is %d\r\n", rcu_clock_freq_get(CK_APB2));
 
-    LCD_ShowChinese(0, 0, "一个一个一个播放器啊", WHITE, BLACK, 16, 0);
-    LCD_ShowString(0, 16, "1145141919810", YELLOW, BLACK, 16, 0);
+    LCD_ShowChinese(8, 0, "世界には愛しかない", WHITE, BLACK, 16, 0);
+    LCD_ShowString(0, 16, "32-Bit 192kSps", YELLOW, BLACK, 16, 0);
 
     audio_test();
 

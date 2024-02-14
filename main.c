@@ -68,11 +68,11 @@ void audio_test(void)
         printf("Open wave file failed: code %d\r\n", res);
         return;
     }
+    tpa6130_SetVolume(0x0c); // -33.3db
     f_lseek(&file, 44);
     i2s_config();
     i2s_SetFs(I2S_FSOPT_192K);
     i2s_SetFrameFormat(I2S_FRAMEFORMAT_DT24B_CH32B);
-    tpa6130_SetVolume(0x0c); // -33.3db
     uint8_t usingbuf = 0;
     uint32_t len1 = SAMPLES_OF_BUFFER * 2, len2 = SAMPLES_OF_BUFFER * 2;
     res = f_read(&file, &line, len1, &len2);
@@ -176,6 +176,8 @@ int main(void)
     printf("\r\nCK_AHB is %d", rcu_clock_freq_get(CK_AHB));
     printf("\r\nCK_APB1 is %d", rcu_clock_freq_get(CK_APB1));
     printf("\r\nCK_APB2 is %d\r\n", rcu_clock_freq_get(CK_APB2));
+
+    delay_1ms(1000);
 
     LCD_ShowChinese(8, 0, " ¿ΩÁ§À§œê€§∑§´§ §§", WHITE, BLACK, 16, 0);
     LCD_ShowString(0, 16, "32-Bit 192kSps", YELLOW, BLACK, 16, 0);

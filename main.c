@@ -171,6 +171,9 @@ int main(void)
     printf("\r\nCK_APB1 is %d", rcu_clock_freq_get(CK_APB1));
     printf("\r\nCK_APB2 is %d\r\n", rcu_clock_freq_get(CK_APB2));
 
+    LCD_ShowChinese(0, 0, "一个一个一个播放器啊", WHITE, BLACK, 16, 0);
+    LCD_ShowString(0, 16, "1145141919810", YELLOW, BLACK, 16, 0);
+
     audio_test();
 
     while (1)

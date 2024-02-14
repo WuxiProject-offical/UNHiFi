@@ -2,7 +2,6 @@
 #include "gd32f30x.h"
 #include "systick.h"
 #include "spiflash.h"
-#include "lcdfont.h"
 
 #define LCD_CS_EN() (GPIO_BC(GPIOB) = (uint32_t)(GPIO_PIN_6))
 #define LCD_CS_DIS() (GPIO_BOP(GPIOB) = (uint32_t)(GPIO_PIN_6))
@@ -355,14 +354,15 @@ void LCD_ShowChinese(uint16_t x, uint16_t y, uint8_t *s, uint16_t fc, uint16_t b
 {
 	while (*s != 0)
 	{
-		if (sizey == 12)
+		/*if (sizey == 12)
 			LCD_ShowChinese12x12(x, y, s, fc, bc, sizey, mode);
-		else if (sizey == 16)
-			LCD_ShowChinese16x16(x, y, s, fc, bc, sizey, mode);
-		else if (sizey == 24)
+		else*/
+		if (sizey == 16)
+			LCD_ShowChinese16x16(x, y, s, fc, bc, mode);
+		/*else if (sizey == 24)
 			LCD_ShowChinese24x24(x, y, s, fc, bc, sizey, mode);
 		else if (sizey == 32)
-			LCD_ShowChinese32x32(x, y, s, fc, bc, sizey, mode);
+			LCD_ShowChinese32x32(x, y, s, fc, bc, sizey, mode);*/
 		else
 			return;
 		s += 2;
@@ -370,269 +370,294 @@ void LCD_ShowChinese(uint16_t x, uint16_t y, uint8_t *s, uint16_t fc, uint16_t b
 	}
 }
 
-void LCD_ShowChinese12x12(uint16_t x, uint16_t y, uint8_t *s, uint16_t fc, uint16_t bc, uint8_t sizey, uint8_t mode)
+uint32_t LCD_GetChineseFontAddr(uint16_t fontSize, uint8_t char1, uint8_t char2)
 {
-	uint8_t i, j, m = 0;
-	uint16_t k;
-	uint16_t HZnum;		  //????
-	uint16_t TypefaceNum; //??????????
-	uint16_t x0 = x;
-	TypefaceNum = (sizey / 8 + ((sizey % 8) ? 1 : 0)) * sizey;
-
-	HZnum = sizeof(tfont12) / sizeof(typFNT_GB12); //??????
-	for (k = 0; k < HZnum; k++)
+	uint32_t addr;
+	uint16_t fontBinSize;
+	/*if (fontSize == 12)
+		{;}
+	else*/
+	if (fontSize == 16)
 	{
-		if ((tfont12[k].Index[0] == *(s)) && (tfont12[k].Index[1] == *(s + 1)))
-		{
-			LCD_Address_Set(x, y, x + sizey - 1, y + sizey - 1);
-			LCD_CS_EN();
-			for (i = 0; i < TypefaceNum; i++)
-			{
-				for (j = 0; j < 8; j++)
-				{
-					if (!mode) //?????
-					{
-						if (tfont12[k].Msk[i] & (0x01 << j))
-							LCD_WR_DATA(fc);
-						else
-							LCD_WR_DATA(bc);
-						m++;
-						if (m % sizey == 0)
-						{
-							m = 0;
-							break;
-						}
-					}
-					else //????
-					{
-						if (tfont12[k].Msk[i] & (0x01 << j))
-						{
-							LCD_Address_Set(x, y, x, y); //??????
-							LCD_WR_DATA(fc);
-						}
-						x++;
-						if ((x - x0) == sizey)
-						{
-							x = x0;
-							y++;
-							break;
-						}
-					}
-				}
-			}
-			LCD_CS_EN();
-		}
-		continue; //?????????????,??????????????
+		addr = 0x00000800UL;
+		fontBinSize = 32;
+		addr += fontBinSize * (0xff - 0x40) * (char1 - 0x81); // High byte
+		addr += fontBinSize * (char2 - 0x40);
 	}
+	/*else if (sizey == 24)
+		{;}
+	else if (sizey == 32)
+		{;}*/
+	else
+		return 0;
+	return addr;
 }
 
-void LCD_ShowChinese16x16(uint16_t x, uint16_t y, uint8_t *s, uint16_t fc, uint16_t bc, uint8_t sizey, uint8_t mode)
-{
-	uint8_t i, j, m = 0;
-	uint16_t k;
-	uint16_t HZnum;		  //????
-	uint16_t TypefaceNum; //??????????
-	uint16_t x0 = x;
-	TypefaceNum = (sizey / 8 + ((sizey % 8) ? 1 : 0)) * sizey;
-	HZnum = sizeof(tfont16) / sizeof(typFNT_GB16); //??????
-	for (k = 0; k < HZnum; k++)
-	{
-		if ((tfont16[k].Index[0] == *(s)) && (tfont16[k].Index[1] == *(s + 1)))
-		{
-			LCD_Address_Set(x, y, x + sizey - 1, y + sizey - 1);
-			LCD_CS_EN();
-			for (i = 0; i < TypefaceNum; i++)
-			{
-				for (j = 0; j < 8; j++)
-				{
-					if (!mode) //?????
-					{
-						if (tfont16[k].Msk[i] & (0x01 << j))
-							LCD_WR_DATA(fc);
-						else
-							LCD_WR_DATA(bc);
-						m++;
-						if (m % sizey == 0)
-						{
-							m = 0;
-							break;
-						}
-					}
-					else //????
-					{
-						if (tfont16[k].Msk[i] & (0x01 << j))
-						{
-							LCD_Address_Set(x, y, x, y); //??????
-							LCD_WR_DATA(fc);
-						}
-						x++;
-						if ((x - x0) == sizey)
-						{
-							x = x0;
-							y++;
-							break;
-						}
-					}
-				}
-			}
-			LCD_CS_DIS();
-		}
-		continue; //?????????????,??????????????
-	}
-}
+// void LCD_ShowChinese12x12(uint16_t x, uint16_t y, uint8_t *s, uint16_t fc, uint16_t bc, uint8_t sizey, uint8_t mode)
+// {
+// 	uint8_t i, j, m = 0;
+// 	uint16_t k;
+// 	uint16_t HZnum;		  //????
+// 	uint16_t TypefaceNum; //??????????
+// 	uint16_t x0 = x;
+// 	TypefaceNum = (sizey / 8 + ((sizey % 8) ? 1 : 0)) * sizey;
+// 	HZnum = sizeof(tfont12) / sizeof(typFNT_GB12); //??????
+// 	for (k = 0; k < HZnum; k++)
+// 	{
+// 		if ((tfont12[k].Index[0] == *(s)) && (tfont12[k].Index[1] == *(s + 1)))
+// 		{
+// 			LCD_Address_Set(x, y, x + sizey - 1, y + sizey - 1);
+// 			LCD_CS_EN();
+// 			for (i = 0; i < TypefaceNum; i++)
+// 			{
+// 				for (j = 0; j < 8; j++)
+// 				{
+// 					if (!mode) //?????
+// 					{
+// 						if (tfont12[k].Msk[i] & (0x01 << j))
+// 							LCD_WR_DATA(fc);
+// 						else
+// 							LCD_WR_DATA(bc);
+// 						m++;
+// 						if (m % sizey == 0)
+// 						{
+// 							m = 0;
+// 							break;
+// 						}
+// 					}
+// 					else //????
+// 					{
+// 						if (tfont12[k].Msk[i] & (0x01 << j))
+// 						{
+// 							LCD_Address_Set(x, y, x, y); //??????
+// 							LCD_WR_DATA(fc);
+// 						}
+// 						x++;
+// 						if ((x - x0) == sizey)
+// 						{
+// 							x = x0;
+// 							y++;
+// 							break;
+// 						}
+// 					}
+// 				}
+// 			}
+// 			LCD_CS_EN();
+// 		}
+// 		continue; //?????????????,??????????????
+// 	}
+// }
 
-void LCD_ShowChinese24x24(uint16_t x, uint16_t y, uint8_t *s, uint16_t fc, uint16_t bc, uint8_t sizey, uint8_t mode)
+void LCD_ShowChinese16x16(uint16_t x, uint16_t y, uint8_t *s, uint16_t fc, uint16_t bc, uint8_t mode)
 {
-	uint8_t i, j, m = 0;
-	uint16_t k;
-	uint16_t HZnum;		  //????
-	uint16_t TypefaceNum; //??????????
-	uint16_t x0 = x;
-	TypefaceNum = (sizey / 8 + ((sizey % 8) ? 1 : 0)) * sizey;
-	HZnum = sizeof(tfont24) / sizeof(typFNT_GB24); //??????
-	for (k = 0; k < HZnum; k++)
-	{
-		if ((tfont24[k].Index[0] == *(s)) && (tfont24[k].Index[1] == *(s + 1)))
-		{
-			LCD_Address_Set(x, y, x + sizey - 1, y + sizey - 1);
-			LCD_CS_EN();
-			for (i = 0; i < TypefaceNum; i++)
-			{
-				for (j = 0; j < 8; j++)
-				{
-					if (!mode) //?????
-					{
-						if (tfont24[k].Msk[i] & (0x01 << j))
-							LCD_WR_DATA(fc);
-						else
-							LCD_WR_DATA(bc);
-						m++;
-						if (m % sizey == 0)
-						{
-							m = 0;
-							break;
-						}
-					}
-					else //????
-					{
-						if (tfont24[k].Msk[i] & (0x01 << j))
-						{
-							LCD_Address_Set(x, y, x, y); //??????
-							LCD_WR_DATA(fc);
-						}
-						x++;
-						if ((x - x0) == sizey)
-						{
-							x = x0;
-							y++;
-							break;
-						}
-					}
-				}
-			}
-			LCD_CS_DIS();
-		}
-		continue; //?????????????,??????????????
-	}
-}
-
-void LCD_ShowChinese32x32(uint16_t x, uint16_t y, uint8_t *s, uint16_t fc, uint16_t bc, uint8_t sizey, uint8_t mode)
-{
-	uint8_t i, j, m = 0;
-	uint16_t k;
-	uint16_t HZnum;		  //????
-	uint16_t TypefaceNum; //??????????
-	uint16_t x0 = x;
-	TypefaceNum = (sizey / 8 + ((sizey % 8) ? 1 : 0)) * sizey;
-	HZnum = sizeof(tfont32) / sizeof(typFNT_GB32); //??????
-	for (k = 0; k < HZnum; k++)
-	{
-		if ((tfont32[k].Index[0] == *(s)) && (tfont32[k].Index[1] == *(s + 1)))
-		{
-			LCD_Address_Set(x, y, x + sizey - 1, y + sizey - 1);
-			LCD_CS_EN();
-			for (i = 0; i < TypefaceNum; i++)
-			{
-				for (j = 0; j < 8; j++)
-				{
-					if (!mode) //?????
-					{
-						if (tfont32[k].Msk[i] & (0x01 << j))
-							LCD_WR_DATA(fc);
-						else
-							LCD_WR_DATA(bc);
-						m++;
-						if (m % sizey == 0)
-						{
-							m = 0;
-							break;
-						}
-					}
-					else //????
-					{
-						if (tfont32[k].Msk[i] & (0x01 << j))
-						{
-							LCD_Address_Set(x, y, x, y); //??????
-							LCD_WR_DATA(fc);
-						}
-						x++;
-						if ((x - x0) == sizey)
-						{
-							x = x0;
-							y++;
-							break;
-						}
-					}
-				}
-			}
-			LCD_CS_DIS();
-		}
-		continue; //?????????????,??????????????
-	}
-}
-
-void LCD_ShowChar(uint16_t x, uint16_t y, uint8_t num, uint16_t fc, uint16_t bc, uint8_t sizey, uint8_t mode)
-{
-	uint8_t temp, sizex, t, m = 0;
-	uint16_t i, TypefaceNum; //??????????
-	uint16_t x0 = x;
-	sizex = sizey / 2;
-	TypefaceNum = (sizex / 8 + ((sizex % 8) ? 1 : 0)) * sizey;
-	num = num - ' ';									 //???????
-	LCD_Address_Set(x, y, x + sizex - 1, y + sizey - 1); //??????
+	const uint16_t fontBinSize = 32, fontSize = 16;
+	uint16_t x0 = x, m = 0;
+	uint8_t fontBin[32 /*fontBinSize*/];
+	spiflash_Read(LCD_GetChineseFontAddr(fontSize, s[0], s[1]), fontBin, fontBinSize);
+	LCD_Address_Set(x, y, x + fontSize - 1, y + fontSize - 1);
 	LCD_CS_EN();
-	for (i = 0; i < TypefaceNum; i++)
+	for (uint16_t i = 0; i < fontBinSize; i++)
 	{
-		if (sizey == 12)
-			temp = ascii_1206[num][i]; //??6x12??
-		else if (sizey == 16)
-			temp = ascii_1608[num][i]; //??8x16??
-		else if (sizey == 24)
-			temp = ascii_2412[num][i]; //??12x24??
-		else if (sizey == 32)
-			temp = ascii_3216[num][i]; //??16x32??
-		else
-			return;
-		for (t = 0; t < 8; t++)
+		for (uint8_t j = 0; j < 8; j++)
 		{
-			if (!mode) //?????
+			if (!mode) // overwrite off it
 			{
-				if (temp & (0x01 << t))
+				if (fontBin[i] & (0x80 >> j))
 					LCD_WR_DATA(fc);
 				else
 					LCD_WR_DATA(bc);
 				m++;
-				if (m % sizex == 0)
+				if (m % fontSize == 0) // avoid out of range
 				{
 					m = 0;
 					break;
 				}
 			}
-			else //????
+			else // overlay on it
 			{
-				if (temp & (0x01 << t))
+				if (fontBin[i] & (0x80 >> j))
 				{
-					LCD_Address_Set(x, y, x, y); //??????
+					LCD_Address_Set(x, y, x, y);
+					LCD_WR_DATA(fc);
+				}
+				x++;
+				if ((x - x0) == fontSize)
+				{
+					x = x0;
+					y++;
+					break;
+				}
+			}
+		}
+	}
+	LCD_CS_DIS();
+}
+
+// void LCD_ShowChinese24x24(uint16_t x, uint16_t y, uint8_t *s, uint16_t fc, uint16_t bc, uint8_t sizey, uint8_t mode)
+// {
+// 	uint8_t i, j, m = 0;
+// 	uint16_t k;
+// 	uint16_t HZnum;		  //????
+// 	uint16_t TypefaceNum; //??????????
+// 	uint16_t x0 = x;
+// 	TypefaceNum = (sizey / 8 + ((sizey % 8) ? 1 : 0)) * sizey;
+// 	HZnum = sizeof(tfont24) / sizeof(typFNT_GB24); //??????
+// 	for (k = 0; k < HZnum; k++)
+// 	{
+// 		if ((tfont24[k].Index[0] == *(s)) && (tfont24[k].Index[1] == *(s + 1)))
+// 		{
+// 			LCD_Address_Set(x, y, x + sizey - 1, y + sizey - 1);
+// 			LCD_CS_EN();
+// 			for (i = 0; i < TypefaceNum; i++)
+// 			{
+// 				for (j = 0; j < 8; j++)
+// 				{
+// 					if (!mode) //?????
+// 					{
+// 						if (tfont24[k].Msk[i] & (0x01 << j))
+// 							LCD_WR_DATA(fc);
+// 						else
+// 							LCD_WR_DATA(bc);
+// 						m++;
+// 						if (m % sizey == 0)
+// 						{
+// 							m = 0;
+// 							break;
+// 						}
+// 					}
+// 					else //????
+// 					{
+// 						if (tfont24[k].Msk[i] & (0x01 << j))
+// 						{
+// 							LCD_Address_Set(x, y, x, y); //??????
+// 							LCD_WR_DATA(fc);
+// 						}
+// 						x++;
+// 						if ((x - x0) == sizey)
+// 						{
+// 							x = x0;
+// 							y++;
+// 							break;
+// 						}
+// 					}
+// 				}
+// 			}
+// 			LCD_CS_DIS();
+// 		}
+// 		continue; //?????????????,??????????????
+// 	}
+// }
+
+// void LCD_ShowChinese32x32(uint16_t x, uint16_t y, uint8_t *s, uint16_t fc, uint16_t bc, uint8_t sizey, uint8_t mode)
+// {
+// 	uint8_t i, j, m = 0;
+// 	uint16_t k;
+// 	uint16_t HZnum;		  //????
+// 	uint16_t TypefaceNum; //??????????
+// 	uint16_t x0 = x;
+// 	TypefaceNum = (sizey / 8 + ((sizey % 8) ? 1 : 0)) * sizey;
+// 	HZnum = sizeof(tfont32) / sizeof(typFNT_GB32); //??????
+// 	for (k = 0; k < HZnum; k++)
+// 	{
+// 		if ((tfont32[k].Index[0] == *(s)) && (tfont32[k].Index[1] == *(s + 1)))
+// 		{
+// 			LCD_Address_Set(x, y, x + sizey - 1, y + sizey - 1);
+// 			LCD_CS_EN();
+// 			for (i = 0; i < TypefaceNum; i++)
+// 			{
+// 				for (j = 0; j < 8; j++)
+// 				{
+// 					if (!mode) //?????
+// 					{
+// 						if (tfont32[k].Msk[i] & (0x01 << j))
+// 							LCD_WR_DATA(fc);
+// 						else
+// 							LCD_WR_DATA(bc);
+// 						m++;
+// 						if (m % sizey == 0)
+// 						{
+// 							m = 0;
+// 							break;
+// 						}
+// 					}
+// 					else //????
+// 					{
+// 						if (tfont32[k].Msk[i] & (0x01 << j))
+// 						{
+// 							LCD_Address_Set(x, y, x, y); //??????
+// 							LCD_WR_DATA(fc);
+// 						}
+// 						x++;
+// 						if ((x - x0) == sizey)
+// 						{
+// 							x = x0;
+// 							y++;
+// 							break;
+// 						}
+// 					}
+// 				}
+// 			}
+// 			LCD_CS_DIS();
+// 		}
+// 		continue; //?????????????,??????????????
+// 	}
+// }
+
+uint32_t LCD_GetASCIIFontAddr(uint16_t fontSize, uint8_t charcode)
+{
+	uint32_t addr;
+	uint16_t fontBinSize;
+	if (charcode > 0x7f)
+		return 0;
+	/*if (fontSize == 12)
+		{;}
+	else*/
+	if (fontSize == 16)
+	{
+		addr = 0x00000000UL;
+		fontBinSize = 16;
+		addr += charcode * fontBinSize;
+	}
+	/*else if (sizey == 24)
+		{;}
+	else if (sizey == 32)
+		{;}*/
+	else
+		return 0;
+	return addr;
+}
+
+void LCD_ShowChar(uint16_t x, uint16_t y, uint8_t num, uint16_t fc, uint16_t bc, uint8_t sizey, uint8_t mode)
+{
+	const uint16_t sizex = (sizey / 2);
+	const uint16_t fontBinSize = (sizex / 8 + ((sizex % 8) ? 1 : 0)) * sizey, fontSize = sizey;
+	uint16_t x0 = x, m = 0;
+	uint8_t fontBin[32 /*max fontBinSize*/];
+	spiflash_Read(LCD_GetASCIIFontAddr(fontSize, num), fontBin, fontBinSize);
+	LCD_Address_Set(x, y, x + sizex - 1, y + sizey - 1);
+	LCD_CS_EN();
+	for (uint16_t i = 0; i < fontBinSize; i++)
+	{
+		for (uint8_t j = 0; j < 8; j++)
+		{
+			if (!mode) // overwrite off it
+			{
+				if (fontBin[i] & (0x80 >> j))
+					LCD_WR_DATA(fc);
+				else
+					LCD_WR_DATA(bc);
+				m++;
+				if (m % sizex == 0) // avoid out of range
+				{
+					m = 0;
+					break;
+				}
+			}
+			else // overlay on it
+			{
+				if (fontBin[i] & (0x80 >> j))
+				{
+					LCD_Address_Set(x, y, x, y);
 					LCD_WR_DATA(fc);
 				}
 				x++;
